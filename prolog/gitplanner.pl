@@ -19,24 +19,21 @@ add(F, Repo, Actions, NewRepo, [['add',F]|Actions]) :-
 
 commitRepoUpdate([], Repo, Repo).
 commitRepoUpdate([F|Files], Repo, NewRepo) :-
-    delete(Repo, state(F, addedToIndex), Repo2);
+    member(state(F, addedToIndex), Repo),
+    delete(Repo, state(F, addedToIndex), Repo2),
+    Repo3 = [state(F, committed)|Repo2],
+    commitRepoUpdate(Files, Repo3, NewRepo).
+commitRepoUpdate([F|Files], Repo, NewRepo) :-
+    member(state(F, updatedInIndex), Repo),
     delete(Repo, state(F, updatedInIndex), Repo2),
     Repo3 = [state(F, committed)|Repo2],
     commitRepoUpdate(Files, Repo3, NewRepo).
-%commitRepoUpdate([F|Files], Repo, NewRepo) :-
-%    delete(Repo, state(F, updatedInIndex), Repo2),
-%    Repo3 = [state(F, committed)|Repo2],
-%    commitRepoUpdate(Files, Repo3, NewRepo).
-
 
 commit(Repo, Actions, NewRepo, [['commit']|Actions]) :-
-    bagof(F, member(state(F, addedToIndex), Repo), Files);
-    bagof(F, member(state(F, updatedInIndex), Repo), Files), % fails if finds nothing
+    bagof(F, (member(state(F, addedToIndex), Repo);
+              member(state(F, updatedInIndex), Repo)),
+          Files),
     commitRepoUpdate(Files, Repo, NewRepo).
-
-%commit(Repo, Actions, NewRepo, [['commit']|Actions]) :-
-%    bagof(F, member(state(F, updatedInIndex), Repo), Files), % fails if finds nothing
-%    commitRepoUpdate(Files, Repo, NewRepo).
 
 reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
     member(state(F, addedToIndex), Repo),
