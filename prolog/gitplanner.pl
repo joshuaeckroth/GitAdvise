@@ -1,4 +1,19 @@
 
+% git business
+
+:- use_module(git).
+
+
+
+% SHA-1 handling
+
+:- use_module(crypto).
+
+fileState(F, Hash) :-
+    file_sha1(F, Hash).
+
+
+
 % state(F, State), e.g., state('a.txt', untracked)
 
 add(F, Repo, Actions, NewRepo, [['add',F]|Actions]) :-
@@ -112,5 +127,6 @@ findplan(Repo, Goal, FinalRepo, FinalActions) :-
     findplan(Files, Repo, [], FinalRepo, ReverseActions),
     goalsmet(FinalRepo, Goal),
     reverse(ReverseActions, FinalActions).
+
 
 

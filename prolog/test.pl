@@ -1,6 +1,6 @@
 % run as:
 %
-% pl -s test.pl -t run_tests
+% swipl -s test.pl -t run_tests
 
 :- use_module(library(test_cover)).
 
