@@ -35,6 +35,30 @@ commit(Repo, Actions, NewRepo, [['commit']|Actions]) :-
           Files),
     commitRepoUpdate(Files, Repo, NewRepo).
 
+resetHardRepoUpdate([], Repo, Repo).
+resetHardRepoUpdate([F|Files], Repo, NewRepo) :-
+    member(state(F, addedToIndex), Repo),
+    delete(Repo, state(F, addedToIndex), Repo2),
+    Repo3 = [state(F, nostatus)|Repo2],
+    resetHardRepoUpdate(Files, Repo3, NewRepo).
+resetHardRepoUpdate([F|Files], Repo, NewRepo) :-
+    member(state(F, updatedInIndex), Repo),
+    delete(Repo, state(F, updatedInIndex), Repo2),
+    Repo3 = [state(F, nostatus)|Repo2],
+    resetHardRepoUpdate(Files, Repo3, NewRepo).
+resetHardRepoUpdate([F|Files], Repo, NewRepo) :-
+    member(state(F, deletedFromIndex), Repo),
+    delete(Repo, state(F, deletedFromIndex), Repo2),
+    Repo3 = [state(F, nostatus)|Repo2],
+    resetHardRepoUpdate(Files, Repo3, NewRepo).
+
+resetHard(Repo, Actions, NewRepo, [['reset-hard']|Actions]) :-
+    bagof(F, (member(state(F, addedToIndex), Repo);
+              member(state(F, updatedInIndex), Repo);
+              member(state(F, deletedFromIndex), Repo)),
+          Files),
+    resetHardRepoUpdate(Files, Repo, NewRepo).
+
 reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
     member(state(F, addedToIndex), Repo),
     delete(Repo, state(F, addedToIndex), Repo2),
@@ -50,6 +74,8 @@ reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
     delete(Repo, state(F, deletedFromIndex), Repo2),
     NewRepo = [state(F, deletedInWorkspace)|Repo2].
 
+
+
 % put no-op first so it's preferred
 findplan(_, Repo, Actions, Repo, Actions).
 
@@ -61,7 +87,8 @@ findplan(Files, Repo, Actions, FinalRepo, FinalActions) :-
     findplan(Files2, NewRepo, NewActions, FinalRepo, FinalActions).
 
 findplan(Files, Repo, Actions, FinalRepo, FinalActions) :-
-    commit(Repo, Actions, NewRepo, NewActions),
+    (commit(Repo, Actions, NewRepo, NewActions);
+     resetHard(Repo, Actions, NewRepo, NewActions)),
     findplan(Files, NewRepo, NewActions, FinalRepo, FinalActions).
 
 goalmetfile(F, Repo, Goal) :-

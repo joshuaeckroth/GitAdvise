@@ -47,7 +47,17 @@ test(findplan_prob2, [nondet]) :-
          FinalRepoSet),
     sort(FinalRepo, FinalRepoSet).
 
-%todo: prob 3
+test(findplan_prob3, [nondet]) :-
+    findplan([state('b.txt', addedToIndex),
+              state('a.txt', untracked)],
+             [state('a.txt', untracked),
+              state('b.txt', nostatus)],
+             FinalRepo,
+             [['reset-hard']]),
+    sort([state('a.txt', untracked),
+          state('b.txt', nostatus)],
+         FinalRepoSet),
+    sort(FinalRepo, FinalRepoSet).
 
 test(findplan_prob4, [nondet]) :-
     findplan([state('a.txt', modifiedInWorkspace),
