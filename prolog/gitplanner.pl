@@ -1,7 +1,7 @@
 
 % git business
 
-:- use_module(git).
+:- use_module(library(git)).
 
 
 
