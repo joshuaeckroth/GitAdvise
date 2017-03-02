@@ -4,27 +4,54 @@
 add(F, Repo, Actions, NewRepo, [['add',F]|Actions]) :-
     member(state(F, untracked), Repo),
     delete(Repo, state(F, untracked), Repo2),
-    NewRepo = [state(F, added)|Repo2].
+    NewRepo = [state(F, addedToIndex)|Repo2].
 
 add(F, Repo, Actions, NewRepo, [['add',F]|Actions]) :-
-    member(state(F, modified), Repo),
-    delete(Repo, state(F, modified), Repo2),
-    NewRepo = [state(F, added)|Repo2].
+    member(state(F, modifiedInWorkspace), Repo),
+    delete(Repo, state(F, modifiedInWorkspace), Repo2),
+    NewRepo = [state(F, updatedInIndex)|Repo2].
+
+add(F, Repo, Actions, NewRepo, [['add',F]|Actions]) :-
+    member(state(F, deletedInWorkspace), Repo),
+    delete(Repo, state(F, deletedInWorkspace), Repo2),
+    NewRepo = [state(F, deletedFromIndex)|Repo2].
+
 
 commitRepoUpdate([], Repo, Repo).
 commitRepoUpdate([F|Files], Repo, NewRepo) :-
-    delete(Repo, state(F, added), Repo2),
+    delete(Repo, state(F, addedToIndex), Repo2);
+    delete(Repo, state(F, updatedInIndex), Repo2),
     Repo3 = [state(F, committed)|Repo2],
     commitRepoUpdate(Files, Repo3, NewRepo).
+%commitRepoUpdate([F|Files], Repo, NewRepo) :-
+%    delete(Repo, state(F, updatedInIndex), Repo2),
+%    Repo3 = [state(F, committed)|Repo2],
+%    commitRepoUpdate(Files, Repo3, NewRepo).
+
 
 commit(Repo, Actions, NewRepo, [['commit']|Actions]) :-
-    bagof(F, member(state(F, added), Repo), Files), % fails if finds nothing
+    bagof(F, member(state(F, addedToIndex), Repo), Files);
+    bagof(F, member(state(F, updatedInIndex), Repo), Files), % fails if finds nothing
     commitRepoUpdate(Files, Repo, NewRepo).
 
+%commit(Repo, Actions, NewRepo, [['commit']|Actions]) :-
+%    bagof(F, member(state(F, updatedInIndex), Repo), Files), % fails if finds nothing
+%    commitRepoUpdate(Files, Repo, NewRepo).
+
 reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
-    member(state(F, added), Repo),
-    delete(Repo, state(F, added), Repo2),
-    NewRepo = [state(F, modified)|Repo2].
+    member(state(F, addedToIndex), Repo),
+    delete(Repo, state(F, addedToIndex), Repo2),
+    NewRepo = [state(F, untracked)|Repo2].
+
+reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
+    member(state(F, updatedInIndex), Repo),
+    delete(Repo, state(F, updatedInIndex), Repo2),
+    NewRepo = [state(F, modifiedInWorkspace)|Repo2].
+
+reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
+    member(state(F, deletedFromIndex), Repo),
+    delete(Repo, state(F, deletedFromIndex), Repo2),
+    NewRepo = [state(F, deletedInWorkspace)|Repo2].
 
 % put no-op first so it's preferred
 findplan(_, Repo, Actions, Repo, Actions).
