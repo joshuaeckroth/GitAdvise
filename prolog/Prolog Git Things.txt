@@ -1,0 +1,9 @@
+git(['status','--porcelain', '-z'], [output(Output)]). 
+produces numbers that represent the output, don't know if this is usable
+without specifying output, it just prints the result, and that is not obtainable
+
+git_ls_tree(List, []).    - List becomes the objects in the git tree
+difference here is that ls-tree through the shell allows you to specify a commit, prolog doesn't seem to
+
+git_shortlog('..', Log, []).         -Log becomes a list of commits with their info
+git_shortlog('..', Log, [limit(number)]).         -same as above, but shows 'number' of commits
