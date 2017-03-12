@@ -1,0 +1,76 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+my $pddl_output = "(define (problem p)\n";
+$pddl_output .= "  (:domain git)\n";
+$pddl_output .= "  (:objects %OBJECTS%)\n"; # to be replaced once all objects are discovered
+
+my @objects;
+
+$pddl_output .= "  (:init\n";
+$pddl_output .= "   ;; initial conditions determined by 'git status --porcelain' output\n";
+
+my $gitstatus = `git status --porcelain -z`;
+foreach my $filestatus (split(/\0/, $gitstatus)) {
+    my ($statuscode, $file) = ($filestatus =~ m/^(..) (.*)$/);
+    push(@objects, $file);
+
+    $pddl_output .= "   ;; $statuscode $file\n";
+
+    my @predicates; # a file could match more than one status
+    if($statuscode =~ m/ M/) { push(@predicates, "modified-in-workspace"); }
+    if($statuscode =~ m/[ MARC]D/) { push(@predicates, "deleted-in-workspace"); }
+    if($statuscode =~ m/M[ MD]/) { push(@predicates, "updated-in-index"); }
+    if($statuscode =~ m/A[ MD]/) { push(@predicates, "added-to-index"); }
+    if($statuscode =~ m/D[ M]/) { push(@predicates, "deleted-from-index"); }
+    if($statuscode =~ m/R[ MD]/) { push(@predicates, "renamed-in-index"); }
+    if($statuscode =~ m/C[ MD]/) { push(@predicates, "copied-in-index"); }
+    if($statuscode =~ m/[MARC] /) { push(@predicates, "index-workspace-match"); }
+    if($statuscode =~ m/[ MARC]M/) { push(@predicates, "workspace-changed-since-index"); }
+    if($statuscode =~ m/DD/) { push(@predicates, "unmerged-both-deleted"); }
+    if($statuscode =~ m/AU/) { push(@predicates, "unmerged-added-by-us"); }
+    if($statuscode =~ m/UD/) { push(@predicates, "unmerged-deleted-by-them"); }
+    if($statuscode =~ m/UA/) { push(@predicates, "unmerged-added-by-them"); }
+    if($statuscode =~ m/DU/) { push(@predicates, "unmerged-deleted-by-us"); }
+    if($statuscode =~ m/AA/) { push(@predicates, "unmerged-both-added"); }
+    if($statuscode =~ m/UU/) { push(@predicates, "unmerged-both-modified"); }
+    if($statuscode =~ m/\?\?/) { push(@predicates, "untracked"); }
+    if($statuscode =~ m/\!\!/) { push(@predicates, "ignored"); }
+
+    foreach my $pred (@predicates) {
+        $pddl_output .= "   ($pred \"$file\")\n";
+    }
+}
+
+my $gitfiles = `git ls-tree --full-tree -r HEAD`;
+foreach my $file (split(/\n/, $gitfiles)) {
+    my ($mode, $type, $objectid, $filename) = ($file =~ m/(\d+) (\w+) (\w+)\t(.+)/);
+    $pddl_output .= "   (filestate \"$filename\" \"$type\" \"$objectid\")\n";
+}
+
+my $gitcommits = `git log --raw --no-abbrev --oneline`;
+$gitcommits =~ s/\n:/::::/g;
+print $gitcommits;
+foreach my $commit (split(/\n/, $gitcommits)) {
+    my ($commitid, $subject, $commitfiles) = ($commit =~ m/(\w+) (.*?)::::(.*)/);
+    foreach my $commitfile (split(/::::/, $commitfiles)) {
+        my ($pmode, $mode, $pobjectid, $objectid, $status, $filename) = ($commitfile =~ m/(\d+) (\d+) (\w+) (\w+) ([A-Z]+)\t(.*)/);
+        $pddl_output .= "   (filecommit \"$filename\" \"$commitid\" \"$pobjectid\" \"$objectid\" \"$status\")\n";
+    }
+}
+
+$pddl_output .= "   )\n"; # close "(:init"
+
+$pddl_output .= "  ;; TODO: goal must be specified\n";
+$pddl_output .= "  (:goal \n  )\n)\n"; 
+
+my $objectstr = "";
+foreach my $object (@objects) {
+    $objectstr .= "\"$object\" ";
+}
+chop($objectstr); # eliminate final space
+
+$pddl_output =~ s/%OBJECTS%/$objectstr/;
+
+print $pddl_output; 
