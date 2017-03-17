@@ -128,5 +128,12 @@ findplan(Repo, Goal, FinalRepo, FinalActions) :-
     goalsmet(FinalRepo, Goal),
     reverse(ReverseActions, FinalActions).
 
-
+%call this when actually running the planner
+findplanexternal(Repo, Goal, FinalRepo, FinalActions) :-
+    findall(F, member(state(F, _), Repo), Files),
+    findplan(Files, Repo, [], FinalRepo, ReverseActions),
+    goalsmet(FinalRepo, Goal),
+    reverse(ReverseActions, FinalActions),
+    print(FinalActions),
+    nl.
 

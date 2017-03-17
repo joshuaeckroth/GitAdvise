@@ -2,32 +2,35 @@
 
 use strict;
 
-my $pddl_output = "(define (problem p)\n";
-$pddl_output .= "  (:domain git)\n";
-$pddl_output .= "  (:objects %OBJECTS%)\n"; # to be replaced once all objects are discovered
+my $pddl_output = "";
+#$pddl_output .= "  (:domain git)\n";
+#$pddl_output .= "  (:objects %OBJECTS%)\n"; # to be replaced once all objects are discovered
 
 my @objects;
 
-$pddl_output .= "  (:init\n";
-$pddl_output .= "   ;; initial conditions determined by 'git status --porcelain' output\n";
+#$pddl_output .= "  (:init\n";
+#$pddl_output .= "   ;; initial conditions determined by 'git status --porcelain' output\n";
+
+#string for displaying the file state in a clean format
+my $userfilestateformat = '';
 
 my $gitstatus = `git status --porcelain -z`;
 foreach my $filestatus (split(/\0/, $gitstatus)) {
     my ($statuscode, $file) = ($filestatus =~ m/^(..) (.*)$/);
     push(@objects, $file);
 
-    $pddl_output .= "   ;; $statuscode $file\n";
+    #$pddl_output .= "   ;; $statuscode $file\n";
 
-    my @predicates; # a file could match more than one status
-    if($statuscode =~ m/ M/) { push(@predicates, "modified-in-workspace"); }
-    if($statuscode =~ m/[ MARC]D/) { push(@predicates, "deleted-in-workspace"); }
-    if($statuscode =~ m/M[ MD]/) { push(@predicates, "updated-in-index"); }
-    if($statuscode =~ m/A[ MD]/) { push(@predicates, "added-to-index"); }
-    if($statuscode =~ m/D[ M]/) { push(@predicates, "deleted-from-index"); }
-    if($statuscode =~ m/R[ MD]/) { push(@predicates, "renamed-in-index"); }
+    my @predicates; # a file could match more than one status            --should be changed to else ifs because of duplicate entries, or be handled differently
+    if($statuscode =~ m/ M/) { push(@predicates, "modifiedInWorkspace"); }
+    if($statuscode =~ m/[ MARC]D/) { push(@predicates, "deletedInWorkspace"); }
+    if($statuscode =~ m/M[ MD]/) { push(@predicates, "updatedInIndex"); }
+    if($statuscode =~ m/A[ MD]/) { push(@predicates, "addedToIndex"); }
+    if($statuscode =~ m/D[ M]/) { push(@predicates, "deletedFromIndex"); }
+    if($statuscode =~ m/R[ MD]/) { push(@predicates, "renamedInIndex"); }
     if($statuscode =~ m/C[ MD]/) { push(@predicates, "copied-in-index"); }
     if($statuscode =~ m/[MARC] /) { push(@predicates, "index-workspace-match"); }
-    if($statuscode =~ m/[ MARC]M/) { push(@predicates, "workspace-changed-since-index"); }
+    #if($statuscode =~ m/[ MARC]M/) { push(@predicates, "workspace-changed-since-index"); } #commented out for conflicts
     if($statuscode =~ m/DD/) { push(@predicates, "unmerged-both-deleted"); }
     if($statuscode =~ m/AU/) { push(@predicates, "unmerged-added-by-us"); }
     if($statuscode =~ m/UD/) { push(@predicates, "unmerged-deleted-by-them"); }
@@ -39,31 +42,37 @@ foreach my $filestatus (split(/\0/, $gitstatus)) {
     if($statuscode =~ m/\!\!/) { push(@predicates, "ignored"); }
 
     foreach my $pred (@predicates) {
-        $pddl_output .= "   ($pred \"$file\")\n";
+        #$pddl_output .= "($pred \"$file\")\n";
+        $pddl_output .= "state(\'$file\', $pred), ";
+        $userfilestateformat .= "[state(\'$file\', $pred)]\n";
+ 
     }
+    
 }
+#clean the last 2 extra characters from file state setup
+$pddl_output = substr($pddl_output, 0, -2);
 
 my $gitfiles = `git ls-tree --full-tree -r HEAD`;
 foreach my $file (split(/\n/, $gitfiles)) {
     my ($mode, $type, $objectid, $filename) = ($file =~ m/(\d+) (\w+) (\w+)\t(.+)/);
-    $pddl_output .= "   (filestate \"$filename\" \"$type\" \"$objectid\")\n";
+    #$pddl_output .= "   (filestate \"$filename\" \"$type\" \"$objectid\")\n";
 }
 
 my $gitcommits = `git log --raw --no-abbrev --oneline`;
 $gitcommits =~ s/\n:/::::/g;
-print $gitcommits;
+#print $gitcommits;
 foreach my $commit (split(/\n/, $gitcommits)) {
     my ($commitid, $subject, $commitfiles) = ($commit =~ m/(\w+) (.*?)::::(.*)/);
     foreach my $commitfile (split(/::::/, $commitfiles)) {
         my ($pmode, $mode, $pobjectid, $objectid, $status, $filename) = ($commitfile =~ m/(\d+) (\d+) (\w+) (\w+) ([A-Z]+)\t(.*)/);
-        $pddl_output .= "   (filecommit \"$filename\" \"$commitid\" \"$pobjectid\" \"$objectid\" \"$status\")\n";
+        #$pddl_output .= "   (filecommit \"$filename\" \"$commitid\" \"$pobjectid\" \"$objectid\" \"$status\")\n";
     }
 }
 
-$pddl_output .= "   )\n"; # close "(:init"
+#$pddl_output .= "   )\n"; # close "(:init"
 
-$pddl_output .= "  ;; TODO: goal must be specified\n";
-$pddl_output .= "  (:goal \n  )\n)\n"; 
+#$pddl_output .= "  ;; TODO: goal must be specified\n";
+#$pddl_output .= "  (:goal \n  )\n)\n"; 
 
 my $objectstr = "";
 foreach my $object (@objects) {
@@ -71,6 +80,8 @@ foreach my $object (@objects) {
 }
 chop($objectstr); # eliminate final space
 
-$pddl_output =~ s/%OBJECTS%/$objectstr/;
+#$pddl_output =~ s/%OBJECTS%/$objectstr/;
 
-print $pddl_output; 
+print $pddl_output;
+print "||||||"; #delimiter for python wrapper
+print $userfilestateformat;
