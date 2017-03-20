@@ -6,6 +6,9 @@ process.wait()
 #for line in iter(process.stdout.readline, b''): print line
 #print process.stdout.read()
 initialState, readableState = process.stdout.read().split("||||||")
+if initialState == "":
+	print "No files have a status, this is currently unsupported"
+	quit()
 
 #todo
 #modify the perl script to find initial state in a format for prolog
@@ -32,5 +35,7 @@ process.wait()
 #print process.returncode
 #print process.stdout.read()
 plan = process.stdout.read()
-print plan
+print
+print "Plan:"
+print plan,
 
