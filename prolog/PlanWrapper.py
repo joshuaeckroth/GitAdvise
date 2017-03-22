@@ -27,6 +27,24 @@ while response != "yes" and response != "no":
 #load goal state or ask for it depending on response
 goalState = ''
 if response == "yes":
+	#file actions here
+	file = open("GoalState", "w+", 0)
+	#process to do here
+	#go through each line in the user readable state,
+	#count the length of each line
+	#find the longest line, and pad the 
+	#file header to that length
+	#example file header in GoalState_template
+	#once this is done, assemble the user readable data
+	#into the header format, then check the header
+	#just made with the existing header in the file,
+	#if they match, the repo status hasn't changed since
+	#the last run, if it has changed, update the file
+
+	#copy all lines below the header, replace the file,
+	#then reinsert the copied  lines back into the file
+
+	print file.name
 	print "Goal file not supported yet"
 	quit()
 else:
@@ -48,4 +66,11 @@ plan = process.stdout.read()
 print
 print "Plan:"
 print plan,
+if plan == "":
+	print "Plan error, unable to acheive goal"
+	quit()
+if plan == "[]\n":
+	print "Goal state is equal to initial state"
+	quit()
+
 
