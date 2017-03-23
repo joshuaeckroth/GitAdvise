@@ -7,7 +7,7 @@
 
 % SHA-1 handling
 
-:- use_module(crypto).
+:- use_module(library(crypto)).
 
 fileState(F, Hash) :-
     file_sha1(F, Hash).

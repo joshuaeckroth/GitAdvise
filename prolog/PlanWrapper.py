@@ -55,10 +55,13 @@ if response == "yes":
                 #file exists, carry on
                 file = open("GoalState", "r+", 0)
                 goalHeader = ''
+		numNewLines = 0 #count the number of lines that start with a newline
                 for line in file:
                         if line[0] == "*":
                                 goalHeader += line
                         else:
+				if line[0] == "\n":
+					numNewLines += 1
                                 goalState += line
 
                 #print goalState,
@@ -109,8 +112,8 @@ if response == "yes":
                         #print("They ARE EQUAL")
                         goalState = goalState.replace("\n", " ")
 
-                        #remove first character, as it is a space that isn't needed
-                        goalState = goalState[1:]
+                        #remove first n characters, were n is the number of lines that start with \n
+                        goalState = goalState[numNewLines:]
                         #print(goalState)
 
                         #continue on to plan call
