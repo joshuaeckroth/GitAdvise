@@ -16,17 +16,18 @@ fileState(F, Hash) :-
 
 % state(F, State), e.g., state('a.txt', untracked)
 
-add(F, Repo, Actions, NewRepo, [['add',F]|Actions]) :-
+add(F, Repo, Actions, Explanations, NewRepo, [['add',F]|Actions], [Expl|Explanations]) :-
     member(state(F, untracked), Repo),
     delete(Repo, state(F, untracked), Repo2),
-    NewRepo = [state(F, addedToIndex)|Repo2].
+    NewRepo = [state(F, addedToIndex)|Repo2],
+    atomics_to_string(["Changes", F, "state from untracked to addedToIndex"], ' ', Expl).
 
-add(F, Repo, Actions, NewRepo, [['add',F]|Actions]) :-
+add(F, Repo, Actions, Explanations, NewRepo, [['add',F]|Actions], Explanations) :-
     member(state(F, modifiedInWorkspace), Repo),
     delete(Repo, state(F, modifiedInWorkspace), Repo2),
     NewRepo = [state(F, updatedInIndex)|Repo2].
 
-add(F, Repo, Actions, NewRepo, [['add',F]|Actions]) :-
+add(F, Repo, Actions, Explanations, NewRepo, [['add',F]|Actions], Explanations) :-
     member(state(F, deletedInWorkspace), Repo),
     delete(Repo, state(F, deletedInWorkspace), Repo2),
     NewRepo = [state(F, deletedFromIndex)|Repo2].
@@ -44,7 +45,7 @@ commitRepoUpdate([F|Files], Repo, NewRepo) :-
     Repo3 = [state(F, committed)|Repo2],
     commitRepoUpdate(Files, Repo3, NewRepo).
 
-commit(Repo, Actions, NewRepo, [['commit']|Actions]) :-
+commit(Repo, Actions, Explanations, NewRepo, [['commit']|Actions], Explanations) :-
     bagof(F, (member(state(F, addedToIndex), Repo);
               member(state(F, updatedInIndex), Repo)),
           Files),
@@ -67,24 +68,24 @@ resetHardRepoUpdate([F|Files], Repo, NewRepo) :-
     Repo3 = [state(F, nostatus)|Repo2],
     resetHardRepoUpdate(Files, Repo3, NewRepo).
 
-resetHard(Repo, Actions, NewRepo, [['reset-hard']|Actions]) :-
+resetHard(Repo, Actions, Explanations, NewRepo, [['reset-hard']|Actions], Explanations) :-
     bagof(F, (member(state(F, addedToIndex), Repo);
               member(state(F, updatedInIndex), Repo);
               member(state(F, deletedFromIndex), Repo)),
           Files),
     resetHardRepoUpdate(Files, Repo, NewRepo).
 
-reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
+reset(F, Repo, Actions, Explanations, NewRepo, [['reset',F]|Actions], Explanations) :-
     member(state(F, addedToIndex), Repo),
     delete(Repo, state(F, addedToIndex), Repo2),
     NewRepo = [state(F, untracked)|Repo2].
 
-reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
+reset(F, Repo, Actions, Explanations, NewRepo, [['reset',F]|Actions], Explanations) :-
     member(state(F, updatedInIndex), Repo),
     delete(Repo, state(F, updatedInIndex), Repo2),
     NewRepo = [state(F, modifiedInWorkspace)|Repo2].
 
-reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
+reset(F, Repo, Actions, Explanations, NewRepo, [['reset',F]|Actions], Explanations) :-
     member(state(F, deletedFromIndex), Repo),
     delete(Repo, state(F, deletedFromIndex), Repo2),
     NewRepo = [state(F, deletedInWorkspace)|Repo2].
@@ -92,19 +93,19 @@ reset(F, Repo, Actions, NewRepo, [['reset',F]|Actions]) :-
 
 
 % put no-op first so it's preferred
-findplan(_, Repo, Actions, Repo, Actions).
+findplan(_, Repo, Actions, Explanations, Repo, Actions, Explanations).
 
-findplan(Files, Repo, Actions, FinalRepo, FinalActions) :-
+findplan(Files, Repo, Actions, Explanations, FinalRepo, FinalActions, FinalExplanations) :-
     member(F, Files),
-    (add(F, Repo, Actions, NewRepo, NewActions);
-     reset(F, Repo, Actions, NewRepo, NewActions)),
+    (add(F, Repo, Actions, Explanations, NewRepo, NewActions, NewExplanations);
+     reset(F, Repo, Actions, Explanations, NewRepo, NewActions, NewExplanations)),
     delete(Files, F, Files2),
-    findplan(Files2, NewRepo, NewActions, FinalRepo, FinalActions).
+    findplan(Files2, NewRepo, NewActions, NewExplanations, FinalRepo, FinalActions, FinalExplanations).
 
-findplan(Files, Repo, Actions, FinalRepo, FinalActions) :-
-    (commit(Repo, Actions, NewRepo, NewActions);
-     resetHard(Repo, Actions, NewRepo, NewActions)),
-    findplan(Files, NewRepo, NewActions, FinalRepo, FinalActions).
+findplan(Files, Repo, Actions, Explanations, FinalRepo, FinalActions, FinalExplanations) :-
+    (commit(Repo, Actions, Explanations, NewRepo, NewActions, NewExplanations);
+     resetHard(Repo, Actions, Explanations, NewRepo, NewActions, NewExplanations)),
+    findplan(Files, NewRepo, NewActions, NewExplanations, FinalRepo, FinalActions, FinalExplanations).
 
 goalmetfile(F, Repo, Goal) :-
     member(state(F, State), Goal),
@@ -122,18 +123,21 @@ goalsmet(Repo, Goal) :-
 % example usage:
 % findplan([state('a.txt', untracked)], [state('a.txt', added)], FinalRepo, FinalActions).
 % findplan([state('a.txt', untracked), state('b.txt', untracked)], [state('a.txt', added), state('b.txt', committed)], FinalRepo, FinalActions).
-findplan(Repo, Goal, FinalRepo, FinalActions) :-
+findplan(Repo, Goal, FinalRepo, FinalActions, FinalExplanations) :-
     findall(F, member(state(F, _), Repo), Files),
-    findplan(Files, Repo, [], FinalRepo, ReverseActions),
-    goalsmet(FinalRepo, Goal),
-    reverse(ReverseActions, FinalActions).
-
-%call this when actually running the planner
-findplanexternal(Repo, Goal, FinalRepo, FinalActions) :-
-    findall(F, member(state(F, _), Repo), Files),
-    findplan(Files, Repo, [], FinalRepo, ReverseActions),
+    findplan(Files, Repo, [], [], FinalRepo, ReverseActions, ReverseExplanations),
     goalsmet(FinalRepo, Goal),
     reverse(ReverseActions, FinalActions),
+    reverse(ReverseExplanations, FinalExplanations).
+
+%call this when actually running the planner
+findplanexternal(Repo, Goal, FinalRepo, FinalActions, FinalExplanations) :-
+    findall(F, member(state(F, _), Repo), Files),
+    findplan(Files, Repo, [], [], FinalRepo, ReverseActions, ReverseExplanations),
+    goalsmet(FinalRepo, Goal),
+    reverse(ReverseActions, FinalActions),
+    reverse(ReverseExplanations, FinalExplanations),
     print(FinalActions),
+    print(FinalExplanations),
     nl.
 

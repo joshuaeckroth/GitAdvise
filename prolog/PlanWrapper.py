@@ -51,11 +51,11 @@ else:
 	print "Specify Goal State:"
 	goalState = raw_input()
 
-planArgument = "findplanexternal([" + initialState + "], [" + goalState + "], FinalRepo, FinalActions)"
-#print planArgument
+planArgument = "findplanexternal([" + initialState + "], [" + goalState + "], FinalRepo, FinalActions, FinalExplanations)"
+print planArgument
 #now tell prolog to find the plan
 #example call
-#swipl -s gitplanner.pl -t "findplan([state('a.txt', untracked)], [state('a.txt', addedToIndex)], FinalRepo, FinalActions)" --quiet
+#swipl -s gitplanner.pl -t "findplan([state('a.txt', untracked)], [state('a.txt', addedToIndex)], FinalRepo, FinalActions, FinalExplanations)" --quiet
 
 cmd = ['swipl', '-s', 'gitplanner.pl', '-t', planArgument, '--quiet']
 process = subprocess.Popen(cmd,  stdout=subprocess.PIPE)
