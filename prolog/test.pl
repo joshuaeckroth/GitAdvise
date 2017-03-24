@@ -13,7 +13,9 @@ test(findplan_simple, [nondet]) :-
              % desired final repo
              [state('a.txt', addedToIndex)],
              % desired final actions
-             [['add', 'a.txt']]).
+             [['add', 'a.txt']],
+             % desired final explanations
+             _).
 
 test(findplan_order_matters, [nondet]) :-
     findplan([state('a.txt', untracked),
@@ -23,7 +25,8 @@ test(findplan_order_matters, [nondet]) :-
              % desired final repo
              FinalRepo,
              % desired final actions
-             [['add', 'b.txt'], ['commit'], ['add', 'a.txt']]),
+             [['add', 'b.txt'], ['commit'], ['add', 'a.txt']],
+             _),
     sort([state('a.txt', addedToIndex),
           state('b.txt', committed)],
          FinalRepoSet),
@@ -33,7 +36,8 @@ test(findplan_prob1, [nondet]) :-
     findplan([state('a.txt', untracked)],
              [state('a.txt', committed)],
              [state('a.txt', committed)],
-             [['add', 'a.txt'], ['commit']]).
+             [['add', 'a.txt'], ['commit']],
+             _).
 
 test(findplan_prob2, [nondet]) :-
     findplan([state('a.txt', addedToIndex),
@@ -41,7 +45,8 @@ test(findplan_prob2, [nondet]) :-
              [state('a.txt', untracked),
               state('b.txt', committed)],
              FinalRepo,
-             [['reset', 'a.txt'], ['add', 'b.txt'], ['commit']]),
+             [['reset', 'a.txt'], ['add', 'b.txt'], ['commit']],
+             _),
     sort([state('a.txt', untracked),
           state('b.txt', committed)],
          FinalRepoSet),
@@ -53,7 +58,8 @@ test(findplan_prob3, [nondet]) :-
              [state('a.txt', untracked),
               state('b.txt', nostatus)],
              FinalRepo,
-             [['reset-hard']]),
+             [['reset-hard']],
+             _),
     sort([state('a.txt', untracked),
           state('b.txt', nostatus)],
          FinalRepoSet),
@@ -65,7 +71,8 @@ test(findplan_prob4, [nondet]) :-
              [state('b.txt', deletedFromIndex),
               state('a.txt', committed)],
              FinalRepo,
-             [['add', 'a.txt'], ['commit'], ['add', 'b.txt']]),
+             [['add', 'a.txt'], ['commit'], ['add', 'b.txt']],
+             _),
     sort([state('b.txt', deletedFromIndex),
           state('a.txt', committed)],
          FinalRepoSet),
@@ -79,7 +86,8 @@ test(findplan_prob5, [nondet]) :-
               state('b.txt', deletedFromIndex),
               state('c.txt', committed)],
              FinalRepo,
-             [['reset', 'a.txt'], ['add', 'c.txt'], ['commit'], ['add', 'b.txt']]),
+             [['reset', 'a.txt'], ['add', 'c.txt'], ['commit'], ['add', 'b.txt']],
+             _),
     sort([state('a.txt', modifiedInWorkspace),
           state('b.txt', deletedFromIndex),
           state('c.txt', committed)],
