@@ -22,12 +22,26 @@ class PlanWrapper {
 		String t2 = "findplanexternal([state('prolog/PlanWrapper.py', modifiedInWorkspace), state('prolog/a.txt', addedToIndex), state('prolog/a.txt', index-workspace-match), state('prolog/gitplanner.pl', modifiedInWorkspace), state('prolog/b.txt', untracked), state('prolog/tmp/', untracked)], [state('prolog/PlanWrapper.py', modifiedInWorkspace), state('prolog/a.txt', committed), state('prolog/gitplanner.pl', modifiedInWorkspace), state('prolog/b.txt', committed), state('prolog/tmp/', untracked)], FinalRepo, FinalActions, FinalExplanations)";
 		System.out.println(t2 + " is " + (Query.hasSolution(t2) ? "provable" : "not provable"));
 		//
-		Map<String, Term>[] ss4 = Query.allSolutions(t2);
-		System.out.println("all solutions of " + t2);
-		for (int i = 0; i < ss4.length; i++) {
-			System.out.println("FinalActions = " + ss4[i].get("FinalActions"));
+		Map<String, Term>[] ss2 = Query.allSolutions(t2);
+		System.out.println("All solutions:");
+		for (int i = 0; i < ss2.length; i++) {
+            System.out.println("========= Solution " + (i+1) + " ==========");
+            // FinalActions and FinalExplanations lists should be same length
+            Term[] actions = ss2[i].get("FinalActions").toTermArray();
+            Term[] explanations = ss2[i].get("FinalExplanations").toTermArray();
+            if(actions.length != explanations.length) {
+                System.out.println("Error: actions and explanations lists have different lengths!");
+            } else {
+                for(int j = 0; j < actions.length; j++) {
+                    String actionString = "";
+                    Term[] actionBits = actions[j].toTermArray();
+                    for(int k = 0; k < actionBits.length; k++) {
+                        actionString += actionBits[k] + " ";
+                    }
+                    System.out.println(actionString + " ==> " + explanations[j]);
+                }
+            }
 		}
-        
     }
 }
 
