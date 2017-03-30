@@ -1,5 +1,7 @@
+package stetsonuniversity.mathcs;
 
 import java.util.Map;
+import java.io.File;
 
 import org.jpl7.JPL;
 import org.jpl7.Query;
@@ -7,6 +9,7 @@ import org.jpl7.Term;
 
 class PlanWrapper {
     public static void main(String[] args) {
+        String planFile = args[0];
 		Query.hasSolution("use_module(library(jpl))"); // only because we call e.g. jpl_pl_syntax/1 below
 		Term swi = Query.oneSolution("current_prolog_flag(version_data,Swi)").get("Swi");
 		System.out.println("swipl.version = " + swi.arg(1) + "." + swi.arg(2) + "." + swi.arg(3));
@@ -16,7 +19,8 @@ class PlanWrapper {
 		System.out.println("jpl.dll = " + org.jpl7.fli.Prolog.get_c_lib_version());
 		System.out.println("jpl.pl = " + Query.oneSolution("jpl_pl_lib_version(V)").get("V").name());
 		//
-		String t1 = "consult('gitplanner.pl')";
+        ClassLoader classLoader = PlanWrapper.class.getClassLoader();
+		String t1 = "consult('"+planFile+"')";
 		System.out.println(t1 + " " + (Query.hasSolution(t1) ? "succeeded" : "failed"));
 		//
 		String t2 = "findplanexternal([state('prolog/PlanWrapper.py', modifiedInWorkspace), state('prolog/a.txt', addedToIndex), state('prolog/a.txt', index-workspace-match), state('prolog/gitplanner.pl', modifiedInWorkspace), state('prolog/b.txt', untracked), state('prolog/tmp/', untracked)], [state('prolog/PlanWrapper.py', modifiedInWorkspace), state('prolog/a.txt', committed), state('prolog/gitplanner.pl', modifiedInWorkspace), state('prolog/b.txt', committed), state('prolog/tmp/', untracked)], FinalRepo, FinalActions, FinalExplanations)";
