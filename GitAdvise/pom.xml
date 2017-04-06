@@ -2,11 +2,11 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>stetsonuniversity.mathcs</groupId>
-    <artifactId>gitplanner</artifactId>
+    <artifactId>GitAdvise</artifactId>
     <packaging>jar</packaging>
     <version>1.0-SNAPSHOT</version>
-    <name>gitplanner</name>
-    <url>http://gitplanner.artifice.cc</url>
+    <name>Git-Advise</name>
+    <url>http://gitadvise.artifice.cc</url>
     <licenses>
         <license>
             <name>MIT License</name>
@@ -15,7 +15,7 @@
         </license>
     </licenses>
     <scm>
-        <url>https://github.com/StetsonMathCS/gitplanner</url>
+        <url>https://github.com/StetsonMathCS/GitAdvise</url>
     </scm>
     <build>
         <resources>
@@ -38,9 +38,11 @@
                         <configuration>
                             <transformers>
                                 <!-- add Main-Class to manifest file -->
+                                <!--
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>stetsonuniversity.mathcs.PlanWrapper</mainClass>
                                 </transformer>
+                                -->
                             </transformers>
                         </configuration>
                     </execution>
@@ -55,11 +57,10 @@
             <version>3.8.1</version>
             <scope>test</scope>
         </dependency>
-        <!-- https://mvnrepository.com/artifact/jpl/jpl -->
         <dependency>
-            <groupId>jpl</groupId>
-            <artifactId>jpl</artifactId>
-            <version>7.0.1</version>
+        <groupId>it.unibo.alice.tuprolog</groupId>
+        <artifactId>tuprolog</artifactId>
+        <version>3.2.1</version>
         </dependency>
     </dependencies>
 </project>

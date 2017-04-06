@@ -1,47 +1,37 @@
 
-% git business
-
-:- use_module(library(git)).
-
-
-
-% SHA-1 handling
-
-:- use_module(library(crypto)).
-
-fileState(F, Hash) :-
-    file_sha1(F, Hash).
-
-
-
 % state(F, State), e.g., state('a.txt', untracked)
 
 add(F, Repo, Actions, Explanations, NewRepo, [['add',F]|Actions], [Expl|Explanations]) :-
     member(state(F, untracked), Repo),
-    delete(Repo, state(F, untracked), Repo2),
+    %swipl: delete(Repo, state(F, untracked), Repo2),
+    delete(state(F, untracked), Repo, Repo2),
     NewRepo = [state(F, addedToIndex)|Repo2],
     atomics_to_string(["Changes", F, "state from untracked to addedToIndex"], ' ', Expl).
 
 add(F, Repo, Actions, Explanations, NewRepo, [['add',F]|Actions], ["No expl!"|Explanations]) :-
     member(state(F, modifiedInWorkspace), Repo),
-    delete(Repo, state(F, modifiedInWorkspace), Repo2),
+    %swipl: delete(Repo, state(F, modifiedInWorkspace), Repo2),
+    delete(state(F, modifiedInWorkspace), Repo, Repo2),
     NewRepo = [state(F, updatedInIndex)|Repo2].
 
 add(F, Repo, Actions, Explanations, NewRepo, [['add',F]|Actions], ["No expl!"|Explanations]) :-
     member(state(F, deletedInWorkspace), Repo),
-    delete(Repo, state(F, deletedInWorkspace), Repo2),
+    %swipl: delete(Repo, state(F, deletedInWorkspace), Repo2),
+    delete(state(F, deletedInWorkspace), Repo, Repo2),
     NewRepo = [state(F, deletedFromIndex)|Repo2].
 
 
 commitRepoUpdate([], Repo, Repo).
 commitRepoUpdate([F|Files], Repo, NewRepo) :-
     member(state(F, addedToIndex), Repo),
-    delete(Repo, state(F, addedToIndex), Repo2),
+    %swipl: delete(Repo, state(F, addedToIndex), Repo2),
+    delete(state(F, addedToIndex), Repo, Repo2),
     Repo3 = [state(F, committed)|Repo2],
     commitRepoUpdate(Files, Repo3, NewRepo).
 commitRepoUpdate([F|Files], Repo, NewRepo) :-
     member(state(F, updatedInIndex), Repo),
-    delete(Repo, state(F, updatedInIndex), Repo2),
+    %swipl: delete(Repo, state(F, updatedInIndex), Repo2),
+    delete(state(F, updatedInIndex), Repo, Repo2),
     Repo3 = [state(F, committed)|Repo2],
     commitRepoUpdate(Files, Repo3, NewRepo).
 
@@ -54,17 +44,20 @@ commit(Repo, Actions, Explanations, NewRepo, [['commit']|Actions], ["No expl!"|E
 resetHardRepoUpdate([], Repo, Repo).
 resetHardRepoUpdate([F|Files], Repo, NewRepo) :-
     member(state(F, addedToIndex), Repo),
-    delete(Repo, state(F, addedToIndex), Repo2),
+    %swipl: delete(Repo, state(F, addedToIndex), Repo2),
+    delete(state(F, addedToIndex), Repo, Repo2),
     Repo3 = [state(F, nostatus)|Repo2],
     resetHardRepoUpdate(Files, Repo3, NewRepo).
 resetHardRepoUpdate([F|Files], Repo, NewRepo) :-
     member(state(F, updatedInIndex), Repo),
-    delete(Repo, state(F, updatedInIndex), Repo2),
+    %swipl: delete(Repo, state(F, updatedInIndex), Repo2),
+    delete(state(F, updatedInIndex), Repo, Repo2),
     Repo3 = [state(F, nostatus)|Repo2],
     resetHardRepoUpdate(Files, Repo3, NewRepo).
 resetHardRepoUpdate([F|Files], Repo, NewRepo) :-
     member(state(F, deletedFromIndex), Repo),
-    delete(Repo, state(F, deletedFromIndex), Repo2),
+    %swipl: delete(Repo, state(F, deletedFromIndex), Repo2),
+    delete(state(F, deletedFromIndex), Repo, Repo2),
     Repo3 = [state(F, nostatus)|Repo2],
     resetHardRepoUpdate(Files, Repo3, NewRepo).
 
@@ -77,17 +70,20 @@ resetHard(Repo, Actions, Explanations, NewRepo, [['reset-hard']|Actions], ["No e
 
 reset(F, Repo, Actions, Explanations, NewRepo, [['reset',F]|Actions], ["No expl!"|Explanations]) :-
     member(state(F, addedToIndex), Repo),
-    delete(Repo, state(F, addedToIndex), Repo2),
+    %swipl: delete(Repo, state(F, addedToIndex), Repo2),
+    delete(state(F, addedToIndex), Repo, Repo2),
     NewRepo = [state(F, untracked)|Repo2].
 
 reset(F, Repo, Actions, Explanations, NewRepo, [['reset',F]|Actions], ["No expl!"|Explanations]) :-
     member(state(F, updatedInIndex), Repo),
-    delete(Repo, state(F, updatedInIndex), Repo2),
+    %swipl: delete(Repo, state(F, updatedInIndex), Repo2),
+    delete(state(F, updatedInIndex), Repo, Repo2),
     NewRepo = [state(F, modifiedInWorkspace)|Repo2].
 
 reset(F, Repo, Actions, Explanations, NewRepo, [['reset',F]|Actions], ["No expl!"|Explanations]) :-
     member(state(F, deletedFromIndex), Repo),
-    delete(Repo, state(F, deletedFromIndex), Repo2),
+    %swipl: delete(Repo, state(F, deletedFromIndex), Repo2),
+    delete(state(F, deletedFromIndex), Repo, Repo2),
     NewRepo = [state(F, deletedInWorkspace)|Repo2].
 
 
@@ -99,7 +95,8 @@ findplan(Files, Repo, Actions, Explanations, FinalRepo, FinalActions, FinalExpla
     member(F, Files),
     (add(F, Repo, Actions, Explanations, NewRepo, NewActions, NewExplanations);
      reset(F, Repo, Actions, Explanations, NewRepo, NewActions, NewExplanations)),
-    delete(Files, F, Files2),
+    %swipl: delete(Files, F, Files2),
+    delete(F, Files, Files2),
     findplan(Files2, NewRepo, NewActions, NewExplanations, FinalRepo, FinalActions, FinalExplanations).
 
 findplan(Files, Repo, Actions, Explanations, FinalRepo, FinalActions, FinalExplanations) :-
@@ -121,8 +118,8 @@ goalsmet(Repo, Goal) :-
     goalmetfiles(Files, Repo, Goal).
 
 % example usage:
-% findplan([state('a.txt', untracked)], [state('a.txt', added)], FinalRepo, FinalActions).
-% findplan([state('a.txt', untracked), state('b.txt', untracked)], [state('a.txt', added), state('b.txt', committed)], FinalRepo, FinalActions).
+% findplan([state('a.txt', untracked)], [state('a.txt', added)], [], FinalRepo, FinalActions, FinalExplanations).
+% findplan([state('a.txt', untracked), state('b.txt', untracked)], [state('a.txt', added), state('b.txt', committed)], [], FinalRepo, FinalActions, FinalExplanations).
 findplan(Repo, Goal, FinalRepo, FinalActions, FinalExplanations) :-
     findall(F, member(state(F, _), Repo), Files),
     findplan(Files, Repo, [], [], FinalRepo, ReverseActions, ReverseExplanations),
