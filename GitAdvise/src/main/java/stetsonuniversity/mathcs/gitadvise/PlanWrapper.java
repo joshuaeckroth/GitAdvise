@@ -16,8 +16,6 @@ public class PlanWrapper {
         InputStream planFileStream = PlanWrapper.class.getClassLoader().getResourceAsStream(planFile);
         Theory theory = new Theory(planFileStream);
         engine.setTheory(theory);
-        SolveInfo info = engine.solve("FindPlan([state('a.txt', addedToIndex)], [state('a.txt', committed)], FinalRepo, FinalActions, FinalExplanations).");
-        System.out.println(info);
     }
 }
 
